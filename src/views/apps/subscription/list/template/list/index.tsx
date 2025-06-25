@@ -6,15 +6,13 @@ import { useState, useEffect, useMemo } from 'react'
 // MUI Imports
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
-import Typography from '@mui/material/Typography'
 import Button from '@mui/material/Button'
+import Checkbox from '@mui/material/Checkbox'
 
 // Third-party Imports
-import classnames from 'classnames'
 import { rankItem } from '@tanstack/match-sorter-utils'
 import {
   createColumnHelper,
-  flexRender,
   getCoreRowModel,
   useReactTable,
   getFilteredRowModel,
@@ -26,8 +24,7 @@ import type { ColumnDef, FilterFn } from '@tanstack/react-table'
 // Type Imports
 import type { SubscriptionTemplateType } from '@/types/apps/subscriptionTypes'
 
-// Style Imports
-import tableStyles from '@core/styles/table.module.css'
+// Component Imports
 import SubscriptionTemplateCard from './SubscriptionTemplateCard'
 import SubscriptionTemplateDetailModal from './SubscriptionTemplateDetailModal'
 import SubscriptionTemplateEditModal from './SubscriptionTemplateEditModal'
@@ -96,20 +93,29 @@ const SubscriptionTemplateList = ({ templateData }: { templateData?: Subscriptio
     () => [
       {
         id: 'select',
-        header: ({ table }) => (
-          <input
-            type='checkbox'
-            checked={table.getIsAllRowsSelected()}
-            indeterminate={table.getIsSomeRowsSelected()}
-            onChange={table.getToggleAllRowsSelectedHandler()}
-          />
-        ),
+        header: ({ table }) => {
+          const ref = React.useRef<HTMLInputElement>(null)
+
+          React.useEffect(() => {
+            if (ref.current) {
+              ref.current.indeterminate = table.getIsSomeRowsSelected()
+            }
+          }, [table.getIsSomeRowsSelected()])
+
+          return (
+            <input
+              type='checkbox'
+              ref={ref}
+              checked={table.getIsAllRowsSelected()}
+              onChange={table.getToggleAllRowsSelectedHandler()}
+            />
+          )
+        },
         cell: ({ row }) => (
-          <input
-            type='checkbox'
+          <Checkbox
+            indeterminate={!!row.getIsSomeSelected()}
             checked={row.getIsSelected()}
             disabled={!row.getCanSelect()}
-            indeterminate={row.getIsSomeSelected()}
             onChange={row.getToggleSelectedHandler()}
           />
         )

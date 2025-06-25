@@ -78,5 +78,14 @@ export const OdooAPI = {
 
     return odoo.delete(model, [id])
   },
+  async getCurrentUser(username: string, password: string) {
+    const { odoo, uid } = await getOdooClient(username, password)
+
+    if (!uid) return null
+    const [user] = await odoo.searchRead('res.users', [['id', '=', uid]], ['id', 'name', 'email', 'login'])
+
+
+    return user ?? null
+  },
   getOdooClient // expose for advanced usage
 }

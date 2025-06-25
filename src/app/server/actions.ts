@@ -35,7 +35,14 @@ export const getInvoiceData = async () => {
 
 export const getUserData = async () => {
   // Ambil semua user Odoo
-  return OdooAPI.searchRead('res.users', [], ['id', 'name', 'email', 'login'])
+  const result = await OdooAPI.searchRead('res.users', [], ['id', 'name', 'email', 'login'])
+
+  // Pastikan OdooAPI.searchRead di getUserData field-nya sesuai dengan response Odoo dan type yang digunakan
+  if (!Array.isArray(result)) {
+    throw new Error('Response Odoo tidak sesuai')
+  }
+
+  return result
 }
 
 export const getPermissionsData = async () => {
@@ -99,7 +106,6 @@ export const deleteCustomerOdooData = async (id: number) => {
   try {
     const result = await OdooAPI.delete('res.partner', id)
 
-
     return { success: !!result, result }
   } catch (error) {
     return { success: false, error: (error as Error).message }
@@ -114,11 +120,36 @@ export const getCurrentUserOdooProfile = async () => {
 
     if (!uid) throw new Error('User belum login Odoo')
 
-
     // Ambil detail user
-    const [user] = await odoo.searchRead('res.users', [['id', '=', uid]], [
-      'id', 'name', 'email', 'login', 'company_id', 'image_1920', 'country_id', 'lang', 'tz', 'active', 'groups_id', 'phone', 'mobile', 'function', 'title', 'website', 'partner_id', 'state_id', 'city', 'street', 'zip', 'birthday'
-    ]) ?? []
+    const [user] =
+      (await odoo.searchRead(
+        'res.users',
+        [['id', '=', uid]],
+        [
+          'id',
+          'name',
+          'email',
+          'login',
+          'company_id',
+          'image_1920',
+          'country_id',
+          'lang',
+          'tz',
+          'active',
+          'groups_id',
+          'phone',
+          'mobile',
+          'function',
+          'title',
+          'website',
+          'partner_id',
+          'state_id',
+          'city',
+          'street',
+          'zip',
+          'birthday'
+        ]
+      )) ?? []
 
     if (!user) throw new Error('User Odoo tidak ditemukan')
 
@@ -178,7 +209,6 @@ export const getProductOdooData = async () => {
       ]
     )
 
-
     return products
   } catch (error) {
     return []
@@ -188,7 +218,6 @@ export const getProductOdooData = async () => {
 export const createProductOdooData = async (values: any) => {
   try {
     const result = await OdooAPI.create('product.template', values)
-
 
     return { success: !!result, result }
   } catch (error) {
@@ -200,7 +229,6 @@ export const updateProductOdooData = async (id: number, values: any) => {
   try {
     const result = await OdooAPI.update('product.template', id, values)
 
-
     return { success: !!result, result }
   } catch (error) {
     return { success: false, error: (error as Error).message }
@@ -210,7 +238,6 @@ export const updateProductOdooData = async (id: number, values: any) => {
 export const deleteProductOdooData = async (id: number) => {
   try {
     const result = await OdooAPI.delete('product.template', id)
-
 
     return { success: !!result, result }
   } catch (error) {

@@ -147,6 +147,117 @@ const productStatusObj: productStatusType = {
 // Column Definitions
 const columnHelper = createColumnHelper<ProductWithActionsType>()
 
+function getProductTableColumns({
+  handleEdit,
+  handleDelete,
+  productCategoryObj,
+  productStatusObj,
+  columnHelper,
+  data,
+  filteredData
+}) {
+  return [
+    {
+      id: 'select',
+      header: ({ table }) => (
+        <Checkbox
+          {...{
+            checked: table.getIsAllRowsSelected(),
+            indeterminate: table.getIsSomeRowsSelected(),
+            onChange: table.getToggleAllRowsSelectedHandler()
+          }}
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          {...{
+            checked: row.getIsSelected(),
+            disabled: !row.getCanSelect(),
+            indeterminate: row.getIsSomeSelected(),
+            onChange: row.getToggleSelectedHandler()
+          }}
+        />
+      )
+    },
+    columnHelper.accessor('productName', {
+      header: 'Product',
+      cell: ({ row }) => (
+        <div className='flex items-center gap-4'>
+          <img src={row.original.image || undefined} width={38} height={38} className='rounded bg-actionHover' />
+          <div className='flex flex-col'>
+            <Typography className='font-medium' color='text.primary'>
+              {row.original.productName}
+            </Typography>
+            <Typography variant='body2'>{row.original.productBrand}</Typography>
+          </div>
+        </div>
+      )
+    }),
+    columnHelper.accessor('category', {
+      header: 'Category',
+      cell: ({ row }) => {
+        const cat = productCategoryObj[row.original.category] ?? { icon: 'tabler-box', color: 'default' }
+
+        return (
+          <div className='flex items-center gap-4'>
+            <CustomAvatar skin='light' color={cat.color} size={30}>
+              <i className={classnames(cat.icon, 'text-lg')} />
+            </CustomAvatar>
+            <Typography color='text.primary'>{row.original.category}</Typography>
+          </div>
+        )
+      }
+    }),
+    columnHelper.accessor('stock', {
+      header: 'Stock',
+      cell: ({ row }) => <Switch defaultChecked={row.original.stock} />,
+      enableSorting: false
+    }),
+    columnHelper.accessor('sku', {
+      header: 'SKU',
+      cell: ({ row }) => <Typography>{row.original.sku}</Typography>
+    }),
+    columnHelper.accessor('price', {
+      header: 'Price',
+      cell: ({ row }) => <Typography>{row.original.price}</Typography>
+    }),
+    columnHelper.accessor('qty', {
+      header: 'QTY',
+      cell: ({ row }) => <Typography>{row.original.qty}</Typography>
+    }),
+    columnHelper.accessor('status', {
+      header: 'Status',
+      cell: ({ row }) => {
+        const stat = productStatusObj[row.original.status] ?? { title: row.original.status, color: 'default' }
+
+        return <Chip label={stat.title} variant='tonal' color={stat.color} size='small' />
+      }
+    }),
+    columnHelper.accessor('actions', {
+      header: 'Actions',
+      cell: ({ row }) => (
+        <div className='flex items-center'>
+          <IconButton onClick={() => handleEdit(row.original)}>
+            <i className='tabler-edit text-textSecondary' />
+          </IconButton>
+          <OptionMenu
+            iconButtonProps={{ size: 'medium' }}
+            iconClassName='text-textSecondary'
+            options={[
+              {
+                text: 'Delete',
+                icon: 'tabler-trash',
+                menuItemProps: { onClick: () => handleDelete(row.original.id) }
+              }
+            ]}
+          />
+        </div>
+      ),
+      enableSorting: false
+    })
+  ]
+}
+
 const ProductListTable = ({ productData }: { productData?: ProductType[] }) => {
   // States
   const [rowSelection, setRowSelection] = useState({})
@@ -156,114 +267,85 @@ const ProductListTable = ({ productData }: { productData?: ProductType[] }) => {
   const [modalOpen, setModalOpen] = useState(false)
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add')
   const [modalInitial, setModalInitial] = useState<Partial<ProductType> | undefined>(undefined)
-  const [loading, setLoading] = useState(false)
   const [notif, setNotif] = useState<string>('')
+
+  // Kategori unik dari data
+  const categories = Array.from(new Set((data || []).map(p => p.category).filter(Boolean)))
+
+  // Handler CRUD
+  const handleAdd = () => {
+    setModalMode('add')
+    setModalInitial(undefined)
+    setModalOpen(true)
+  }
+
+  const handleEdit = (row: ProductType) => {
+    setModalMode('edit')
+    setModalInitial(row)
+    setModalOpen(true)
+  }
+
+  const handleDelete = async (id: number) => {
+    const res = await deleteProductOdooData(id)
+
+    if (res.success) {
+      setData(data?.filter(product => product.id !== id))
+      setNotif('Produk berhasil dihapus')
+    } else {
+      setNotif('Gagal hapus produk')
+    }
+  }
+
+  const handleSubmit = async (values: Partial<ProductType>) => {
+    if (modalMode === 'add') {
+      const res = await createProductOdooData({
+        name: values.productName,
+        categ_id: categories.indexOf(values.category || '') !== -1 ? undefined : values.category,
+        default_code: values.sku,
+        list_price: values.price,
+        active: values.status === 'active'
+      })
+
+      if (res.success) {
+        setData([...(data || []), { ...values, id: res.result, stock: values.status === 'active' } as ProductType])
+        setNotif('Produk berhasil ditambah')
+        setModalOpen(false)
+      } else {
+        setNotif('Gagal tambah produk')
+      }
+    } else if (modalMode === 'edit' && modalInitial?.id) {
+      const res = await updateProductOdooData(modalInitial.id, {
+        name: values.productName,
+        categ_id: categories.indexOf(values.category || '') !== -1 ? undefined : values.category,
+        default_code: values.sku,
+        list_price: values.price,
+        active: values.status === 'active'
+      })
+
+      if (res.success) {
+        setData((data || []).map(p => (p.id === modalInitial.id ? { ...p, ...values } : p)))
+        setNotif('Produk berhasil diupdate')
+        setModalOpen(false)
+      } else {
+        setNotif('Gagal update produk')
+      }
+    }
+  }
 
   // Hooks
   const { lang: locale } = useParams()
 
   const columns = useMemo<ColumnDef<ProductWithActionsType, any>[]>(
-    () => [
-      {
-        id: 'select',
-        header: ({ table }) => (
-          <Checkbox
-            {...{
-              checked: table.getIsAllRowsSelected(),
-              indeterminate: table.getIsSomeRowsSelected(),
-              onChange: table.getToggleAllRowsSelectedHandler()
-            }}
-          />
-        ),
-        cell: ({ row }) => (
-          <Checkbox
-            {...{
-              checked: row.getIsSelected(),
-              disabled: !row.getCanSelect(),
-              indeterminate: row.getIsSomeSelected(),
-              onChange: row.getToggleSelectedHandler()
-            }}
-          />
-        )
-      },
-      columnHelper.accessor('productName', {
-        header: 'Product',
-        cell: ({ row }) => (
-          <div className='flex items-center gap-4'>
-            <img src={row.original.image} width={38} height={38} className='rounded bg-actionHover' />
-            <div className='flex flex-col'>
-              <Typography className='font-medium' color='text.primary'>
-                {row.original.productName}
-              </Typography>
-              <Typography variant='body2'>{row.original.productBrand}</Typography>
-            </div>
-          </div>
-        )
+    () =>
+      getProductTableColumns({
+        handleEdit,
+        handleDelete,
+        productCategoryObj,
+        productStatusObj,
+        columnHelper,
+        data,
+        filteredData
       }),
-      columnHelper.accessor('category', {
-        header: 'Category',
-        cell: ({ row }) => {
-          const cat = productCategoryObj[row.original.category] ?? { icon: 'tabler-box', color: 'default' }
-
-          return (
-            <div className='flex items-center gap-4'>
-              <CustomAvatar skin='light' color={cat.color} size={30}>
-                <i className={classnames(cat.icon, 'text-lg')} />
-              </CustomAvatar>
-              <Typography color='text.primary'>{row.original.category}</Typography>
-            </div>
-          )
-        }
-      }),
-      columnHelper.accessor('stock', {
-        header: 'Stock',
-        cell: ({ row }) => <Switch defaultChecked={row.original.stock} />,
-        enableSorting: false
-      }),
-      columnHelper.accessor('sku', {
-        header: 'SKU',
-        cell: ({ row }) => <Typography>{row.original.sku}</Typography>
-      }),
-      columnHelper.accessor('price', {
-        header: 'Price',
-        cell: ({ row }) => <Typography>{row.original.price}</Typography>
-      }),
-      columnHelper.accessor('qty', {
-        header: 'QTY',
-        cell: ({ row }) => <Typography>{row.original.qty}</Typography>
-      }),
-      columnHelper.accessor('status', {
-        header: 'Status',
-        cell: ({ row }) => {
-          const stat = productStatusObj[row.original.status] ?? { title: row.original.status, color: 'default' }
-
-          return <Chip label={stat.title} variant='tonal' color={stat.color} size='small' />
-        }
-      }),
-      columnHelper.accessor('actions', {
-        header: 'Actions',
-        cell: ({ row }) => (
-          <div className='flex items-center'>
-            <IconButton onClick={() => handleEdit(row.original)}>
-              <i className='tabler-edit text-textSecondary' />
-            </IconButton>
-            <OptionMenu
-              iconButtonProps={{ size: 'medium' }}
-              iconClassName='text-textSecondary'
-              options={[
-                {
-                  text: 'Delete',
-                  icon: 'tabler-trash',
-                  menuItemProps: { onClick: () => handleDelete(row.original.id) }
-                }
-              ]}
-            />
-          </div>
-        ),
-        enableSorting: false
-      })
-    ],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [data, filteredData]
   )
 
@@ -313,10 +395,7 @@ const ProductListTable = ({ productData }: { productData?: ProductType[] }) => {
   }
 
   const handleDelete = async (id: number) => {
-    setLoading(true)
     const res = await deleteProductOdooData(id)
-
-    setLoading(false)
 
     if (res.success) {
       setData(data?.filter(product => product.id !== id))
@@ -327,8 +406,6 @@ const ProductListTable = ({ productData }: { productData?: ProductType[] }) => {
   }
 
   const handleSubmit = async (values: Partial<ProductType>) => {
-    setLoading(true)
-
     if (modalMode === 'add') {
       const res = await createProductOdooData({
         name: values.productName,
@@ -337,8 +414,6 @@ const ProductListTable = ({ productData }: { productData?: ProductType[] }) => {
         list_price: values.price,
         active: values.status === 'active'
       })
-
-      setLoading(false)
 
       if (res.success) {
         setData([...(data || []), { ...values, id: res.result, stock: values.status === 'active' } as ProductType])
@@ -355,8 +430,6 @@ const ProductListTable = ({ productData }: { productData?: ProductType[] }) => {
         list_price: values.price,
         active: values.status === 'active'
       })
-
-      setLoading(false)
 
       if (res.success) {
         setData((data || []).map(p => (p.id === modalInitial.id ? { ...p, ...values } : p)))

@@ -33,7 +33,7 @@ import {
   getPaginationRowModel,
   getSortedRowModel
 } from '@tanstack/react-table'
-import type { ColumnDef, FilterFn } from '@tanstack/react-table'
+import type { ColumnDef, FilterFn, Row } from '@tanstack/react-table'
 import type { RankingInfo } from '@tanstack/match-sorter-utils'
 
 // Type Imports
@@ -145,11 +145,11 @@ const UserListTable = ({ tableData }: { tableData?: UsersType[] }) => {
           />
         )
       },
-      columnHelper.accessor('name', {
+      columnHelper.accessor('fullName', {
         header: 'Name',
         cell: ({ row }) => {
-          const name = row.original.name
-          const avatar = row.original.image_1920
+          const name = row.original.fullName
+          const avatar = row.original.avatar
 
           function stringToColor(str: string) {
             let hash = 0
@@ -163,7 +163,6 @@ const UserListTable = ({ tableData }: { tableData?: UsersType[] }) => {
             return '#' + '00000'.substring(0, 6 - c.length) + c
           }
 
-          // Cek base64 valid: panjang > 100, hanya karakter base64, dan bukan string 'false' atau kosong
           const isValidBase64 =
             avatar && typeof avatar === 'string' && avatar.length > 100 && /^[A-Za-z0-9+/=]+$/.test(avatar)
 
@@ -206,21 +205,21 @@ const UserListTable = ({ tableData }: { tableData?: UsersType[] }) => {
           )
         }
       }),
-      columnHelper.accessor('login', {
-        header: 'Login',
-        cell: ({ row }) => <Typography>{row.original.login}</Typography>
+      columnHelper.accessor('email', {
+        header: 'Email',
+        cell: ({ row }) => <Typography>{row.original.email}</Typography>
       }),
-      columnHelper.accessor('active', {
+      columnHelper.accessor('role', {
+        header: 'Role',
+        cell: ({ row }) => <Typography>{row.original.role}</Typography>
+      }),
+      columnHelper.accessor('status', {
         header: 'Status',
-        cell: ({ row }) => <Typography>{row.original.active}</Typography>
+        cell: ({ row }) => <Typography>{row.original.status}</Typography>
       }),
-      columnHelper.accessor('company_id', {
+      columnHelper.accessor('company', {
         header: 'Company',
-        cell: ({ row }) => <Typography>{row.original.company_id || '-'}</Typography>
-      }),
-      columnHelper.accessor('login_date', {
-        header: 'Last Login',
-        cell: ({ row }) => <Typography>{row.original.login_date || '-'}</Typography>
+        cell: ({ row }) => <Typography>{row.original.company || '-'}</Typography>
       }),
       columnHelper.accessor('action', {
         header: 'Action',
@@ -271,6 +270,18 @@ const UserListTable = ({ tableData }: { tableData?: UsersType[] }) => {
     getFacetedUniqueValues: getFacetedUniqueValues(),
     getFacetedMinMaxValues: getFacetedMinMaxValues()
   })
+
+  // Bagi fungsi utama yang panjang menjadi beberapa fungsi kecil
+  // Ubah fungsi agar menerima Row<UsersType>[]
+  function renderUserTableRows(rows: Row<UsersType>[]) {
+    return rows.map(row => (
+      <tr key={row.id} className={classnames({ selected: row.getIsSelected() })}>
+        {row.getVisibleCells().map(cell => (
+          <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
+        ))}
+      </tr>
+    ))
+  }
 
   return (
     <>
@@ -352,18 +363,7 @@ const UserListTable = ({ tableData }: { tableData?: UsersType[] }) => {
               </tbody>
             ) : (
               <tbody>
-                {table
-                  .getRowModel()
-                  .rows.slice(0, table.getState().pagination.pageSize)
-                  .map(row => {
-                    return (
-                      <tr key={row.id} className={classnames({ selected: row.getIsSelected() })}>
-                        {row.getVisibleCells().map(cell => (
-                          <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
-                        ))}
-                      </tr>
-                    )
-                  })}
+                {renderUserTableRows(table.getRowModel().rows.slice(0, table.getState().pagination.pageSize))}
               </tbody>
             )}
           </table>

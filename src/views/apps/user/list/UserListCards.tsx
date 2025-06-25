@@ -1,5 +1,6 @@
 // MUI Imports
 import Grid from '@mui/material/Grid2'
+import type { ThemeColor } from 'src/types/themeTypes'
 
 // Component Imports
 import HorizontalWithSubtitle from '@components/card-statistics/HorizontalWithSubtitle'
@@ -11,6 +12,8 @@ const UserListCards = ({ userData }: { userData?: any[] }) => {
   const active = userData?.filter(u => u.active).length || 0
   const inactive = userData?.filter(u => !u.active).length || 0
   const admin = userData?.filter(u => u.name === 'Administrator').length || 0
+
+  const themeColors = ['primary', 'success', 'secondary', 'error']
 
   const data = [
     {
@@ -49,12 +52,18 @@ const UserListCards = ({ userData }: { userData?: any[] }) => {
       trend: 'positive',
       trendNumber: ''
     }
-  ]
+  ].map(item => {
+    const avatarColor: ThemeColor | undefined = themeColors.includes(item.avatarColor)
+      ? (item.avatarColor as ThemeColor)
+      : undefined
+
+    return { ...item, avatarColor }
+  })
 
   return (
     <Grid container spacing={6}>
       {data.map((item, i) => (
-        <Grid key={i} size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid key={item.title} size={{ xs: 12, sm: 6, md: 3 }}>
           <HorizontalWithSubtitle {...item} />
         </Grid>
       ))}

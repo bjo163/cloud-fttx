@@ -21,5 +21,8 @@ export async function GET() {
     contact: ''
   }))
 
+  // Pastikan mapping hasil OdooAPI ke response API sudah sesuai dan semua field yang diakses ada di response Odoo
+  // Tambahkan error handling jika field tidak ditemukan
+
   return NextResponse.json(mapped)
 }

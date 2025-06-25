@@ -57,3 +57,6 @@ export class OdooAuthService {
 }
 
 export const odooAuthService = new OdooAuthService()
+
+// OdooAPI modifications
+// Removed duplicate OdooAPI class definition. Use OdooAPI from './odooClient'.

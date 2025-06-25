@@ -1,11 +1,14 @@
 // Odoo Connection Test Utility
-import { odooAuthService } from './odooAuth'
+import { odooAuthService } from '../libs/odoo/auth'
+
+// Pastikan import odooAuth sesuai dengan yang diekspor dari src/libs/odoo/auth.ts
+// Jika tidak ada, gunakan odooAuthService atau OdooAPI sesuai implementasi terbaru
 
 export async function testOdooConnection(username: string, password: string) {
   console.log('Testing Odoo connection...')
 
   try {
-    const result = await odooAuthService.authenticate(username, password)
+    const result = await odooAuthService(username, password)
 
     if (result.success) {
       console.log('✅ Odoo connection successful!')
@@ -26,5 +29,5 @@ export async function testOdooConnection(username: string, password: string) {
 
 // For testing in browser console or development
 if (typeof window !== 'undefined') {
-  ;(window as any).testOdooConnection = testOdooConnection
+  ; (window as any).testOdooConnection = testOdooConnection
 }

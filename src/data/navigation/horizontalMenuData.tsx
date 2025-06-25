@@ -1,7 +1,7 @@
 // Type Imports
 import type { HorizontalMenuDataType } from '@/types/menuTypes'
 import type { UnifiedMenuDataType } from './menuData'
-import menuData from './menuData'
+import menuData from '../../data/navigation/menuData'
 
 // Helper: mapping dari unified ke horizontal jika perlu
 function mapToHorizontalMenu(data: UnifiedMenuDataType[]): HorizontalMenuDataType[] {
@@ -27,11 +27,6 @@ function mapToHorizontalMenu(data: UnifiedMenuDataType[]): HorizontalMenuDataTyp
   })
 }
 
-const horizontalMenuData = (): HorizontalMenuDataType[] => {
-  const unified = menuData(dictionary)
-
-  // Jika ingin filter/transform khusus horizontal, lakukan di sini
-  return mapToHorizontalMenu(unified)
-}
+const horizontalMenuData = menuData()
 
 export default horizontalMenuData

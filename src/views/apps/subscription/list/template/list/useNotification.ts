@@ -21,10 +21,10 @@ export function useNotification() {
     setOpen(true)
   }, [])
 
-  const Notification = (
-    React.createElement(Snackbar, { open, autoHideDuration: 3000, onClose: () => setOpen(false) },
-      React.createElement(Alert, { onClose: () => setOpen(false), severity, sx: { width: '100%' } }, message)
-    )
+  const Notification = React.createElement(
+    Snackbar,
+    { open, autoHideDuration: 3000, onClose: () => setOpen(false) },
+    React.createElement(Alert, { onClose: () => setOpen(false), severity, sx: { width: '100%' } }, message)
   )
 
   return { notify, Notification }

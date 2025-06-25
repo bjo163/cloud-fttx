@@ -79,7 +79,7 @@ const ProductFormModal = ({ open, onClose, onSubmit, initialData, categories, mo
             </MenuItem>
           ))}
         </TextField>
-        <TextField label='SKU' name='sku' value={form.sku} onChange={handleChange} fullWidth />
+        <TextField label='SKU' name='sku' value={form.sku} onChange={handleChange} fullWidth type='number' />
         <TextField
           label='Harga'
           name='price'
