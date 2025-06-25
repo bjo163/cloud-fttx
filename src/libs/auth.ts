@@ -131,19 +131,16 @@ export const authOptions: NextAuthOptions = {
         token.login = (user as any).login
         token.id = user.id
 
-
         // Simpan password Odoo ke JWT (hanya untuk development/testing)
         if ((user as any).password) {
           token.odooPassword = (user as any).password
         }
       }
 
-
       // Saat update session, update password juga jika ada
       if (trigger === 'update' && session?.odooPassword) {
         token.odooPassword = session.odooPassword
       }
-
 
       return token
     },
@@ -154,13 +151,11 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string
         session.user.login = token.login as string
 
-
         // Simpan password Odoo ke session (hanya untuk development/testing)
         if (token.odooPassword) {
-          (session.user as any).odooPassword = token.odooPassword
+          ;(session.user as any).odooPassword = token.odooPassword
         }
       }
-
 
       return session
     }

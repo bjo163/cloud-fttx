@@ -98,10 +98,13 @@ const DebouncedInput = ({
 const columnHelper = createColumnHelper<ProjectTableRowType>()
 
 const ProjectTables = ({ projectTable }: { projectTable?: ProjectTableRowType[] }) => {
+  // Defensive: jika projectTable undefined/null, jadikan array kosong
+  const safeProjectTable = Array.isArray(projectTable) ? projectTable : []
+
   // States
   const [rowSelection, setRowSelection] = useState({})
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [data, setData] = useState(...[projectTable])
+  const [data, setData] = useState(safeProjectTable)
   const [globalFilter, setGlobalFilter] = useState('')
 
   // Hooks
@@ -189,7 +192,7 @@ const ProjectTables = ({ projectTable }: { projectTable?: ProjectTableRowType[] 
   )
 
   const table = useReactTable({
-    data: data as ProjectTableRowType[],
+    data: safeProjectTable,
     columns,
     filterFns: {
       fuzzy: fuzzyFilter

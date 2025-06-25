@@ -14,7 +14,6 @@ export interface OdooClientResult {
 async function getOdooSessionCredentials() {
   const session = await getServerSession(authOptions)
 
-
   return {
     login: session?.user?.login,
     password: (session?.user as any)?.odooPassword
@@ -46,7 +45,6 @@ async function getOdooClient(username?: string, password?: string): Promise<Odoo
   if (!uid) return { odoo, uid: null, companyId: null }
   const [me] = await odoo.searchRead('res.users', [['id', '=', uid]], ['company_id'])
   const companyId = me?.company_id?.[0] ?? null
-
 
   return { odoo, uid, companyId }
 }

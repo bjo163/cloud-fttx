@@ -46,11 +46,14 @@ import CustomAvatar from '@core/components/mui/Avatar'
 import CustomTextField from '@core/components/mui/TextField'
 import TablePaginationComponent from '@components/TablePaginationComponent'
 import { useCustomerTable } from './useCustomerTable'
+import CustomerDetailModal from './CustomerDetailModal'
+import CustomerEditModal from './CustomerEditModal'
 
 // Util Imports
 import { getInitials } from '@/utils/getInitials'
 import { getLocalizedUrl } from '@/utils/i18n'
 import { OdooAPI } from '@/libs/odoo'
+import { updateCustomerOdooData, deleteCustomerOdooData } from '@/app/server/actions'
 
 // Style Imports
 import tableStyles from '@core/styles/table.module.css'
@@ -139,6 +142,9 @@ const columnHelper = createColumnHelper<ECommerceOrderTypeWithAction>()
 const CustomerListTable = ({ initialData }: { initialData: Customer[] }) => {
   const { data, setData, rowSelection, setRowSelection, globalFilter, setGlobalFilter } = useCustomerTable(initialData)
   const [customerUserOpen, setCustomerUserOpen] = useState(false)
+  const [detailOpen, setDetailOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
+  const [selected, setSelected] = useState<Customer | undefined>(undefined)
 
   // Hooks
   const { lang: locale } = useParams()
@@ -306,15 +312,54 @@ const CustomerListTable = ({ initialData }: { initialData: Customer[] }) => {
 
   // Handler aksi (dummy, bisa diisi modal/detail/edit sesuai task 4-6)
   const handleView = (row: Customer) => {
-    // TODO: tampilkan modal detail customer
+    setSelected(row)
+    setDetailOpen(true)
   }
 
   const handleEdit = (row: Customer) => {
-    // TODO: tampilkan modal edit customer
+    setSelected(row)
+    setEditOpen(true)
   }
 
-  const handleDelete = (row: Customer) => {
-    // TODO: integrasi delete ke OdooAPI
+  // Refactor: handler delete terpisah
+  const handleDelete = async (row: Customer) => {
+    // Integrasi OdooAPI.delete
+    const res = await deleteCustomerOdooData(Number(row.id))
+
+    if (res.success) {
+      setData(data.filter(d => d.id !== row.id))
+
+      // TODO: tampilkan notifikasi sukses
+    } else {
+      // TODO: tampilkan notifikasi gagal
+      alert('Delete gagal: ' + (res.error || 'Unknown error'))
+    }
+  }
+
+  const handleEditSave = async (data: Partial<Customer>) => {
+    if (!selected) return
+
+    // Mapping data ke format Odoo
+    const values: any = {
+      name: data.customer,
+      email: data.email
+
+      // country_id: ... // mapping jika country_id diperlukan
+      // Tambahkan mapping field lain sesuai kebutuhan
+    }
+
+    const res = await updateCustomerOdooData(Number(selected.id), values)
+
+    if (res.success) {
+      // Update state lokal
+      setData(prev => prev.map(c => (c.id === selected.id ? { ...c, ...data } : c)))
+      setEditOpen(false)
+
+      // TODO: tampilkan notifikasi sukses
+    } else {
+      // TODO: tampilkan notifikasi gagal
+      alert('Update gagal: ' + (res.error || 'Unknown error'))
+    }
   }
 
   return (
@@ -428,6 +473,13 @@ const CustomerListTable = ({ initialData }: { initialData: Customer[] }) => {
         handleClose={() => setCustomerUserOpen(!customerUserOpen)}
         setData={setData}
         customerData={data}
+      />
+      <CustomerDetailModal open={detailOpen} onClose={() => setDetailOpen(false)} customer={selected} />
+      <CustomerEditModal
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        customer={selected}
+        onSave={handleEditSave}
       />
     </>
   )

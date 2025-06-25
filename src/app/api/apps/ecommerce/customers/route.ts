@@ -21,6 +21,5 @@ export async function GET() {
     contact: ''
   }))
 
-
   return NextResponse.json(mapped)
 }

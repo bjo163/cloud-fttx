@@ -47,7 +47,6 @@ export class OdooAuthService {
     try {
       const user = await OdooAPI.getCurrentUser(username, password)
 
-
       return !!user
     } catch (error) {
       console.error('Session validation error:', error)

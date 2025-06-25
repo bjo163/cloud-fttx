@@ -29,8 +29,10 @@ const InvoiceCard = ({ invoiceData }: InvoiceCardProps) => {
   // Hitung summary dari data Odoo
   const clients = new Set(invoiceData?.map(inv => inv.contact)).size
   const invoices = invoiceData?.length ?? 0
+
   const paid =
     invoiceData?.filter(inv => inv.invoiceStatus === 'paid').reduce((sum, inv) => sum + Number(inv.total), 0) ?? 0
+
   const unpaid =
     invoiceData?.filter(inv => inv.invoiceStatus !== 'paid').reduce((sum, inv) => sum + Number(inv.total), 0) ?? 0
 

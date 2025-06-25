@@ -50,6 +50,8 @@ import CustomAvatar from '@core/components/mui/Avatar'
 import CustomTextField from '@core/components/mui/TextField'
 import OptionMenu from '@core/components/option-menu'
 import TablePaginationComponent from '@components/TablePaginationComponent'
+import ProductFormModal from './ProductFormModal'
+import { createProductOdooData, updateProductOdooData, deleteProductOdooData } from '@/app/server/actions'
 
 // Util Imports
 import { getLocalizedUrl } from '@/utils/i18n'
@@ -151,6 +153,11 @@ const ProductListTable = ({ productData }: { productData?: ProductType[] }) => {
   const [data, setData] = useState(...[productData])
   const [filteredData, setFilteredData] = useState(data)
   const [globalFilter, setGlobalFilter] = useState('')
+  const [modalOpen, setModalOpen] = useState(false)
+  const [modalMode, setModalMode] = useState<'add' | 'edit'>('add')
+  const [modalInitial, setModalInitial] = useState<Partial<ProductType> | undefined>(undefined)
+  const [loading, setLoading] = useState(false)
+  const [notif, setNotif] = useState<string>('')
 
   // Hooks
   const { lang: locale } = useParams()
@@ -195,14 +202,18 @@ const ProductListTable = ({ productData }: { productData?: ProductType[] }) => {
       }),
       columnHelper.accessor('category', {
         header: 'Category',
-        cell: ({ row }) => (
-          <div className='flex items-center gap-4'>
-            <CustomAvatar skin='light' color={productCategoryObj[row.original.category].color} size={30}>
-              <i className={classnames(productCategoryObj[row.original.category].icon, 'text-lg')} />
-            </CustomAvatar>
-            <Typography color='text.primary'>{row.original.category}</Typography>
-          </div>
-        )
+        cell: ({ row }) => {
+          const cat = productCategoryObj[row.original.category] ?? { icon: 'tabler-box', color: 'default' }
+
+          return (
+            <div className='flex items-center gap-4'>
+              <CustomAvatar skin='light' color={cat.color} size={30}>
+                <i className={classnames(cat.icon, 'text-lg')} />
+              </CustomAvatar>
+              <Typography color='text.primary'>{row.original.category}</Typography>
+            </div>
+          )
+        }
       }),
       columnHelper.accessor('stock', {
         header: 'Stock',
@@ -223,33 +234,28 @@ const ProductListTable = ({ productData }: { productData?: ProductType[] }) => {
       }),
       columnHelper.accessor('status', {
         header: 'Status',
-        cell: ({ row }) => (
-          <Chip
-            label={productStatusObj[row.original.status].title}
-            variant='tonal'
-            color={productStatusObj[row.original.status].color}
-            size='small'
-          />
-        )
+        cell: ({ row }) => {
+          const stat = productStatusObj[row.original.status] ?? { title: row.original.status, color: 'default' }
+
+          return <Chip label={stat.title} variant='tonal' color={stat.color} size='small' />
+        }
       }),
       columnHelper.accessor('actions', {
         header: 'Actions',
         cell: ({ row }) => (
           <div className='flex items-center'>
-            <IconButton>
+            <IconButton onClick={() => handleEdit(row.original)}>
               <i className='tabler-edit text-textSecondary' />
             </IconButton>
             <OptionMenu
               iconButtonProps={{ size: 'medium' }}
               iconClassName='text-textSecondary'
               options={[
-                { text: 'Download', icon: 'tabler-download' },
                 {
                   text: 'Delete',
                   icon: 'tabler-trash',
-                  menuItemProps: { onClick: () => setData(data?.filter(product => product.id !== row.original.id)) }
-                },
-                { text: 'Duplicate', icon: 'tabler-copy' }
+                  menuItemProps: { onClick: () => handleDelete(row.original.id) }
+                }
               ]}
             />
           </div>
@@ -290,6 +296,78 @@ const ProductListTable = ({ productData }: { productData?: ProductType[] }) => {
     getFacetedMinMaxValues: getFacetedMinMaxValues()
   })
 
+  // Kategori unik dari data
+  const categories = Array.from(new Set((data || []).map(p => p.category).filter(Boolean)))
+
+  // Handler CRUD
+  const handleAdd = () => {
+    setModalMode('add')
+    setModalInitial(undefined)
+    setModalOpen(true)
+  }
+
+  const handleEdit = (row: ProductType) => {
+    setModalMode('edit')
+    setModalInitial(row)
+    setModalOpen(true)
+  }
+
+  const handleDelete = async (id: number) => {
+    setLoading(true)
+    const res = await deleteProductOdooData(id)
+
+    setLoading(false)
+
+    if (res.success) {
+      setData(data?.filter(product => product.id !== id))
+      setNotif('Produk berhasil dihapus')
+    } else {
+      setNotif('Gagal hapus produk')
+    }
+  }
+
+  const handleSubmit = async (values: Partial<ProductType>) => {
+    setLoading(true)
+
+    if (modalMode === 'add') {
+      const res = await createProductOdooData({
+        name: values.productName,
+        categ_id: categories.indexOf(values.category || '') !== -1 ? undefined : values.category,
+        default_code: values.sku,
+        list_price: values.price,
+        active: values.status === 'active'
+      })
+
+      setLoading(false)
+
+      if (res.success) {
+        setData([...(data || []), { ...values, id: res.result, stock: values.status === 'active' } as ProductType])
+        setNotif('Produk berhasil ditambah')
+        setModalOpen(false)
+      } else {
+        setNotif('Gagal tambah produk')
+      }
+    } else if (modalMode === 'edit' && modalInitial?.id) {
+      const res = await updateProductOdooData(modalInitial.id, {
+        name: values.productName,
+        categ_id: categories.indexOf(values.category || '') !== -1 ? undefined : values.category,
+        default_code: values.sku,
+        list_price: values.price,
+        active: values.status === 'active'
+      })
+
+      setLoading(false)
+
+      if (res.success) {
+        setData((data || []).map(p => (p.id === modalInitial.id ? { ...p, ...values } : p)))
+        setNotif('Produk berhasil diupdate')
+        setModalOpen(false)
+      } else {
+        setNotif('Gagal update produk')
+      }
+    }
+  }
+
   return (
     <>
       <Card>
@@ -324,10 +402,9 @@ const ProductListTable = ({ productData }: { productData?: ProductType[] }) => {
             </Button>
             <Button
               variant='contained'
-              component={Link}
               className='max-sm:is-full is-auto'
-              href={getLocalizedUrl('/apps/ecommerce/products/add', locale as Locale)}
               startIcon={<i className='tabler-plus' />}
+              onClick={handleAdd}
             >
               Add Product
             </Button>
@@ -398,6 +475,15 @@ const ProductListTable = ({ productData }: { productData?: ProductType[] }) => {
           }}
         />
       </Card>
+      <ProductFormModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSubmit={handleSubmit}
+        initialData={modalInitial}
+        categories={categories}
+        mode={modalMode}
+      />
+      {notif && <div className='text-success p-2'>{notif}</div>}
     </>
   )
 }

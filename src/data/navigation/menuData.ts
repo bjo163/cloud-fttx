@@ -47,7 +47,7 @@ const menuData = (): UnifiedMenuDataType[] => [
       {
         label: 'Landing',
         href: '/front-pages/landing-page',
-        target: '_blank',
+        target: '_blank'
       },
       { label: 'Pricing', href: '/front-pages/pricing', target: '_blank' },
       { label: 'Payment', href: '/front-pages/payment', target: '_blank' },
@@ -55,7 +55,7 @@ const menuData = (): UnifiedMenuDataType[] => [
       {
         label: 'Help Center',
         href: '/front-pages/help-center',
-        target: '_blank',
+        target: '_blank'
       }
     ]
   },
@@ -511,8 +511,7 @@ const menuData = (): UnifiedMenuDataType[] => [
         ]
       }
     ]
-  },
-
+  }
 ]
 
 export default menuData

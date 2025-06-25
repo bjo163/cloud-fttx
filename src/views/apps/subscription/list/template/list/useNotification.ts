@@ -1,27 +1,31 @@
-import { useCallback, useState } from 'react'
+import React, { useCallback, useState } from 'react'
+
 import Snackbar from '@mui/material/Snackbar'
-import Alert from '@mui/material/Alert'
-import React from 'react'
+import MuiAlert from '@mui/material/Alert'
+
+// AlertColor type from MUI
+export type AlertColor = 'success' | 'info' | 'warning' | 'error'
+
+const Alert = React.forwardRef<HTMLDivElement, any>(function Alert(props, ref) {
+  return React.createElement(MuiAlert, { elevation: 6, ref, variant: 'filled', ...props })
+})
 
 export function useNotification() {
-    const [open, setOpen] = useState(false)
-    const [message, setMessage] = useState('')
-    const [severity, setSeverity] = useState<'success' | 'error' | 'info' | 'warning'>('success')
+  const [open, setOpen] = useState(false)
+  const [message, setMessage] = useState('')
+  const [severity, setSeverity] = useState<AlertColor>('success')
 
-    const notify = useCallback((msg: string, sev: typeof severity = 'success') => {
-        setMessage(msg)
-        setSeverity(sev)
-        setOpen(true)
-    }, [])
+  const notify = useCallback((msg: string, sev: AlertColor = 'success') => {
+    setMessage(msg)
+    setSeverity(sev)
+    setOpen(true)
+  }, [])
 
-    const Notification = (
-        <Snackbar open= { open } autoHideDuration = { 3000} onClose = {() => setOpen(false)
-}>
-    <Alert onClose={ () => setOpen(false) } severity = { severity } sx = {{ width: '100%' }}>
-        { message }
-        </Alert>
-        </Snackbar>
+  const Notification = (
+    React.createElement(Snackbar, { open, autoHideDuration: 3000, onClose: () => setOpen(false) },
+      React.createElement(Alert, { onClose: () => setOpen(false), severity, sx: { width: '100%' } }, message)
+    )
   )
 
-return { notify, Notification }
+  return { notify, Notification }
 }
