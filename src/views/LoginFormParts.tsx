@@ -32,11 +32,7 @@ import type { SystemMode } from '@core/types'
 
 export const schema = object({
   email: pipe(string(), minLength(1, 'Email wajib diisi'), email('Format email tidak valid')),
-  password: pipe(
-    string(),
-    nonEmpty('This field is required'),
-    minLength(6, 'Password must be at least 6 characters long')
-  )
+  password: pipe(string(), nonEmpty('Password wajib diisi'), minLength(6, 'Password minimal 6 karakter'))
 })
 
 export function useLoginForm() {
