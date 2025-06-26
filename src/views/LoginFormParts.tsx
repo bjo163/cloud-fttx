@@ -51,7 +51,8 @@ export function useLoginForm() {
     defaultValues: {
       email: 'admin@vuexy.com',
       password: 'admin'
-    }
+    },
+    mode: 'onChange'
   })
 }
 
