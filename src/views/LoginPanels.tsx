@@ -61,9 +61,9 @@ export function LoginLeftPanel({ mode }: { mode: SystemMode }) {
 
   // Dynamic Pollinations AI image
   const pollinationsPrompt = encodeURIComponent(
-    'conceptual_isometric_world_of_login_page_modern_ui_digital_illustration'
+    'futuristic isometric login page ui, digital, modern, vibrant, 3d, trending on artstation, png'
   )
-  const pollinationsUrl = `https://image.pollinations.ai/prompt/${pollinationsPrompt}`
+  const pollinationsUrl = `https://image.pollinations.ai/prompt/${pollinationsPrompt}.png`
   const [imgSrc, setImgSrc] = useState(pollinationsUrl)
 
   const handleImgError = () => setImgSrc(characterIllustration)
