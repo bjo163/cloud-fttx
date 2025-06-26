@@ -19,9 +19,9 @@ import {
 
 import { signIn } from 'next-auth/react'
 
-import type { InferInput } from 'valibot'
-
 import { object, string, minLength, email, pipe, nonEmpty } from 'valibot'
+
+import type { FormData, ErrorType } from '@/types/pages/loginTypes'
 
 import CustomTextField from '@core/components/mui/TextField'
 
@@ -29,12 +29,6 @@ import { getLocalizedUrl } from '@/utils/i18n'
 import type { Locale } from '@/configs/i18n'
 
 import type { SystemMode } from '@core/types'
-
-export type ErrorType = {
-  message: string[]
-}
-
-export type FormData = InferInput<typeof schema>
 
 export const schema = object({
   email: pipe(string(), minLength(1, 'Email wajib diisi'), email('Format email tidak valid')),
