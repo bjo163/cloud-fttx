@@ -112,46 +112,102 @@ export const deleteCustomerOdooData = async (id: number) => {
   }
 }
 
-export const getCurrentUserOdooProfile = async () => {
+// Type for user profile return
+type UserProfile = {
+  id?: number;
+  name: string;
+  email: string;
+  login?: string;
+  company?: string;
+  avatar: string;
+  country: string;
+  lang?: string;
+  timezone?: string;
+  active?: boolean;
+  groups?: number[];
+  phone: string;
+  mobile?: string;
+  function?: string;
+  title?: string;
+  website?: string;
+  partner_id?: number;
+  state?: string;
+  city?: string;
+  street?: string;
+  zip?: string;
+  birthday?: string;
+  error?: string;
+  [key: string]: string | number | boolean | number[] | undefined;
+};
+
+// Helper function to get Odoo connection
+async function getOdooConnection(): Promise<{ odoo: any; uid: number | null }> {
+  try {
+    const { odoo, uid } = await OdooAPI.getOdooClient();
+
+    return { odoo, uid };
+  } catch (error) {
+    console.error('Error connecting to Odoo:', error);
+
+    return { odoo: null, uid: null };
+  }
+}
+
+// Helper function to fetch user data
+async function fetchOdooUserData(odoo: any, uid: number): Promise<any> {
+  try {
+    const result = await odoo.searchRead(
+      'res.users',
+      [['id', '=', uid]],
+      [
+        'id', 'name', 'email', 'login', 'company_id', 'image_1920',
+        'country_id', 'lang', 'tz', 'active', 'groups_id', 'phone',
+        'mobile', 'function', 'title', 'website', 'partner_id',
+        'state_id', 'city', 'street', 'zip', 'birthday'
+      ]
+    );
+
+    const [user] = result ?? [];
+
+    return user;
+  } catch (error) {
+    console.error('Error fetching user data from Odoo:', error);
+
+    return null;
+  }
+}
+
+// Main function to get user profile
+export const getCurrentUserOdooProfile = async (): Promise<UserProfile> => {
   // Ambil user Odoo yang sedang login (current session)
   try {
     // Dapatkan user id dari session Odoo
-    const { odoo, uid } = await OdooAPI.getOdooClient()
+    const { odoo, uid } = await getOdooConnection();
 
-    if (!uid) throw new Error('User belum login Odoo')
+    if (!odoo || !uid) {
+      return {
+        error: 'User belum login Odoo atau koneksi gagal',
+        name: '',
+        email: '',
+        phone: '',
+        country: '',
+        avatar: ''
+      };
+    }
 
     // Ambil detail user
-    const [user] =
-      (await odoo.searchRead(
-        'res.users',
-        [['id', '=', uid]],
-        [
-          'id',
-          'name',
-          'email',
-          'login',
-          'company_id',
-          'image_1920',
-          'country_id',
-          'lang',
-          'tz',
-          'active',
-          'groups_id',
-          'phone',
-          'mobile',
-          'function',
-          'title',
-          'website',
-          'partner_id',
-          'state_id',
-          'city',
-          'street',
-          'zip',
-          'birthday'
-        ]
-      )) ?? []
+    const user = await fetchOdooUserData(odoo, uid);
 
-    if (!user) throw new Error('User Odoo tidak ditemukan')
+    if (!user) {
+      return {
+        error: 'User Odoo tidak ditemukan',
+        name: '',
+        email: '',
+        phone: '',
+        country: '',
+        avatar: ''
+      };
+    }
 
     // Mapping ke struktur profile
     return {
@@ -177,13 +233,18 @@ export const getCurrentUserOdooProfile = async () => {
       street: user.street ?? '',
       zip: user.zip ?? '',
       birthday: user.birthday ?? ''
-
-      // last_login: user.last_login ?? '' // Dihapus karena tidak ada di Odoo
-    }
+    };
   } catch (error) {
-    console.error('Error fetching Odoo user profile:', error)
+    console.error('Error fetching Odoo user profile:', error);
 
-    return { error: (error as Error).message }
+    return {
+      error: (error as Error).message,
+      name: '',
+      email: '',
+      phone: '',
+      country: '',
+      avatar: ''
+    };
   }
 }
 
@@ -211,7 +272,9 @@ export const getProductOdooData = async () => {
 
     return products
   } catch (error) {
-    return []
+    console.error('Error fetching products from Odoo:', error);
+
+    return [];
   }
 }
 
@@ -242,5 +305,30 @@ export const deleteProductOdooData = async (id: number) => {
     return { success: !!result, result }
   } catch (error) {
     return { success: false, error: (error as Error).message }
+  }
+}
+
+export const isUserProfileComplete = async () => {
+  // Ambil profil user Odoo dari session
+  try {
+    const profile = await getCurrentUserOdooProfile()
+
+    if (!profile || profile.error) {
+      return { complete: false, missingFields: ['profile not found'], profile }
+    }
+
+
+    // Field wajib
+    const requiredFields = ['name', 'email', 'phone', 'country', 'avatar']
+    const missingFields = requiredFields.filter(field => !profile[field] || profile[field] === '')
+
+
+    return {
+      complete: missingFields.length === 0,
+      missingFields,
+      profile
+    }
+  } catch (error) {
+    return { complete: false, missingFields: ['error'], error: (error as Error).message }
   }
 }

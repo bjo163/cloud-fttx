@@ -72,17 +72,5 @@ Tulis 10 saran tugas dalam format berikut:
 - Semua custom type/interface disimpan di `/types`
 - Hindari mendefinisikan ulang tipe di banyak file
 - Gunakan `export type` atau `export interface` per modul
-
-============================
-📤 FORMAT JSON (OPSIONAL)
-============================
-
-{
-"task_id": 4,
-"title": "Optimalkan Caching Data Pelanggan",
-"type": "Improvement",
-"difficulty": 14,
-"file": "/lib/cache.js",
-"instruction": "Tambahkan Redis caching untuk data pelanggan yang sering diakses",
-"goal": "Kurangi waktu respon API dan beban DB"
-}
+- Project Ini menggunakan Odoo sebagai backend libs\odoo yang menggunakan .env file untuk konfigurasi
+- Business Logic Pemanggilan src\app\server\actions.ts
