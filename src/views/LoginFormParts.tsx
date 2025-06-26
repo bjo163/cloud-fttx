@@ -56,6 +56,82 @@ export function useLoginForm() {
   })
 }
 
+function EmailInput({ control, errors, errorState, setErrorState }: any) {
+  return (
+    <Controller
+      name='email'
+      control={control}
+      rules={{ required: true }}
+      render={({ field }) => (
+        <CustomTextField
+          {...field}
+          autoFocus
+          fullWidth
+          type='email'
+          label='Email'
+          placeholder='Masukkan email anda'
+          onChange={e => {
+            field.onChange(e.target.value)
+            errorState !== null && setErrorState(null)
+          }}
+          error={Boolean(errors.email) || Boolean(errorState)}
+          helperText={errors.email?.message || (!errors.email && errorState?.message[0]) || ''}
+        />
+      )}
+    />
+  )
+}
+
+function PasswordInput({ control, errors, errorState, setErrorState, isPasswordShown, handleClickShowPassword }: any) {
+  return (
+    <Controller
+      name='password'
+      control={control}
+      rules={{ required: true }}
+      render={({ field }) => (
+        <CustomTextField
+          {...field}
+          fullWidth
+          label='Password'
+          placeholder='············'
+          id='login-password'
+          type={isPasswordShown ? 'text' : 'password'}
+          onChange={e => {
+            field.onChange(e.target.value)
+            errorState !== null && setErrorState(null)
+          }}
+          slotProps={{
+            input: {
+              endAdornment: (
+                <InputAdornment position='end'>
+                  <IconButton edge='end' onClick={handleClickShowPassword} onMouseDown={e => e.preventDefault()}>
+                    <i className={isPasswordShown ? 'tabler-eye' : 'tabler-eye-off'} />
+                  </IconButton>
+                </InputAdornment>
+              )
+            }
+          }}
+          {...(errors.password && { error: true, helperText: errors.password.message })}
+        />
+      )}
+    />
+  )
+}
+
+function SocialLoginButton() {
+  return (
+    <Button
+      color='secondary'
+      className='self-center text-textPrimary'
+      startIcon={<img src='/images/logos/google.png' alt='Google' width={22} />}
+      sx={{ '& .MuiButton-startIcon': { marginInlineEnd: 3 } }}
+      onClick={() => signIn('google')}
+    >
+      Sign in with Google
+    </Button>
+  )
+}
+
 export function LoginForm({
   control,
   errors,
@@ -75,57 +151,14 @@ export function LoginForm({
 }) {
   return (
     <form noValidate autoComplete='off' action={() => {}} className='flex flex-col gap-6'>
-      <Controller
-        name='email'
+      <EmailInput control={control} errors={errors} errorState={errorState} setErrorState={setErrorState} />
+      <PasswordInput
         control={control}
-        rules={{ required: true }}
-        render={({ field }) => (
-          <CustomTextField
-            {...field}
-            autoFocus
-            fullWidth
-            type='email'
-            label='Email'
-            placeholder='Masukkan email anda'
-            onChange={e => {
-              field.onChange(e.target.value)
-              errorState !== null && setErrorState(null)
-            }}
-            error={Boolean(errors.email) || Boolean(errorState)}
-            helperText={errors.email?.message || (!errors.email && errorState?.message[0]) || ''}
-          />
-        )}
-      />
-      <Controller
-        name='password'
-        control={control}
-        rules={{ required: true }}
-        render={({ field }) => (
-          <CustomTextField
-            {...field}
-            fullWidth
-            label='Password'
-            placeholder='············'
-            id='login-password'
-            type={isPasswordShown ? 'text' : 'password'}
-            onChange={e => {
-              field.onChange(e.target.value)
-              errorState !== null && setErrorState(null)
-            }}
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <InputAdornment position='end'>
-                    <IconButton edge='end' onClick={handleClickShowPassword} onMouseDown={e => e.preventDefault()}>
-                      <i className={isPasswordShown ? 'tabler-eye' : 'tabler-eye-off'} />
-                    </IconButton>
-                  </InputAdornment>
-                )
-              }
-            }}
-            {...(errors.password && { error: true, helperText: errors.password.message })}
-          />
-        )}
+        errors={errors}
+        errorState={errorState}
+        setErrorState={setErrorState}
+        isPasswordShown={isPasswordShown}
+        handleClickShowPassword={handleClickShowPassword}
       />
       <div className='flex justify-between items-center gap-x-3 gap-y-1 flex-wrap'>
         <FormControlLabel control={<Checkbox defaultChecked />} label='Remember me' />
@@ -148,15 +181,7 @@ export function LoginForm({
         </Typography>
       </div>
       <Divider className='gap-2'>or</Divider>
-      <Button
-        color='secondary'
-        className='self-center text-textPrimary'
-        startIcon={<img src='/images/logos/google.png' alt='Google' width={22} />}
-        sx={{ '& .MuiButton-startIcon': { marginInlineEnd: 3 } }}
-        onClick={() => signIn('google')}
-      >
-        Sign in with Google
-      </Button>
+      <SocialLoginButton />
     </form>
   )
 }
