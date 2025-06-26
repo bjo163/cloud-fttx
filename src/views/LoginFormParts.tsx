@@ -129,7 +129,9 @@ export function LoginForm({
   setErrorState,
   isPasswordShown,
   handleClickShowPassword,
-  locale
+  locale,
+  loading = false,
+  onSubmit
 }: {
   control: any
   errors: any
@@ -138,9 +140,11 @@ export function LoginForm({
   isPasswordShown: boolean
   handleClickShowPassword: () => void
   locale: string | string[] | undefined
+  loading?: boolean
+  onSubmit?: (e: React.FormEvent<HTMLFormElement>) => void
 }) {
   return (
-    <form noValidate autoComplete='off' action={() => {}} className='flex flex-col gap-6'>
+    <form noValidate autoComplete='off' action={() => {}} className='flex flex-col gap-6' onSubmit={onSubmit}>
       <EmailInput control={control} errors={errors} errorState={errorState} setErrorState={setErrorState} />
       <PasswordInput
         control={control}
@@ -161,8 +165,14 @@ export function LoginForm({
           Forgot password?
         </Typography>
       </div>
-      <Button fullWidth variant='contained' type='submit'>
-        Login
+      <Button
+        fullWidth
+        variant='contained'
+        type='submit'
+        disabled={loading}
+        startIcon={loading ? <span className='loader' /> : undefined}
+      >
+        {loading ? 'Loading...' : 'Login'}
       </Button>
       <div className='flex justify-center items-center flex-wrap gap-2'>
         <Typography>New on our platform?</Typography>
