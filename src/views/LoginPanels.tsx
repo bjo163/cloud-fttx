@@ -1,0 +1,107 @@
+import { useState } from 'react'
+
+import { styled, useTheme } from '@mui/material/styles'
+import useMediaQuery from '@mui/material/useMediaQuery'
+import classnames from 'classnames'
+
+import Typography from '@mui/material/Typography'
+
+import Alert from '@mui/material/Alert'
+
+import { useImageVariant } from '@core/hooks/useImageVariant'
+import { useSettings } from '@core/hooks/useSettings'
+import Logo from '@components/layout/shared/Logo'
+import themeConfig from '@configs/themeConfig'
+
+import type { SystemMode } from '@core/types'
+
+const LoginIllustration = styled('img')(({ theme }) => ({
+  zIndex: 2,
+  blockSize: 'auto',
+  maxBlockSize: 680,
+  maxInlineSize: '100%',
+  margin: theme.spacing(12),
+  [theme.breakpoints.down(1536)]: {
+    maxBlockSize: 550
+  },
+  [theme.breakpoints.down('lg')]: {
+    maxBlockSize: 450
+  }
+}))
+
+const MaskImg = styled('img')({
+  blockSize: 'auto',
+  maxBlockSize: 355,
+  inlineSize: '100%',
+  position: 'absolute',
+  insetBlockEnd: 0,
+  zIndex: -1
+})
+
+export function LoginLeftPanel({ mode }: { mode: SystemMode }) {
+  const { settings } = useSettings()
+  const theme = useTheme()
+  const hidden = useMediaQuery(theme.breakpoints.down('md'))
+  const darkImg = '/images/pages/auth-mask-dark.png'
+  const lightImg = '/images/pages/auth-mask-light.png'
+  const darkIllustration = '/images/illustrations/auth/v2-login-dark.png'
+  const lightIllustration = '/images/illustrations/auth/v2-login-light.png'
+  const borderedDarkIllustration = '/images/illustrations/auth/v2-login-dark-border.png'
+  const borderedLightIllustration = '/images/illustrations/auth/v2-login-light-border.png'
+
+  const characterIllustration = useImageVariant(
+    mode,
+    lightIllustration,
+    darkIllustration,
+    borderedLightIllustration,
+    borderedDarkIllustration
+  )
+
+  const authBackground = useImageVariant(mode, lightImg, darkImg)
+
+  // Dynamic Pollinations AI image
+  const pollinationsPrompt = encodeURIComponent(
+    'conceptual_isometric_world_of_login_page_modern_ui_digital_illustration'
+  )
+  const pollinationsUrl = `https://image.pollinations.ai/prompt/${pollinationsPrompt}`
+  const [imgSrc, setImgSrc] = useState(pollinationsUrl)
+
+  const handleImgError = () => setImgSrc(characterIllustration)
+
+  return (
+    <div
+      className={classnames(
+        'flex bs-full items-center justify-center flex-1 min-bs-[100dvh] relative p-6 max-md:hidden',
+        {
+          'border-ie': settings.skin === 'bordered'
+        }
+      )}
+    >
+      <LoginIllustration src={imgSrc} alt='character-illustration' onError={handleImgError} />
+      {!hidden && <MaskImg alt='mask' src={authBackground} />}
+    </div>
+  )
+}
+
+export function LoginRightPanel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className='flex justify-center items-center bs-full bg-backgroundPaper !min-is-full p-6 md:!min-is-[unset] md:p-12 md:is-[480px]'>
+      <div className='absolute block-start-5 sm:block-start-[33px] inline-start-6 sm:inline-start-[38px]'>
+        <Logo />
+      </div>
+      <div className='flex flex-col gap-6 is-full sm:is-auto md:is-full sm:max-is-[400px] md:max-is-[unset] mbs-8 sm:mbs-11 md:mbs-0'>
+        <div className='flex flex-col gap-1'>
+          <Typography variant='h4'>{`Welcome to ${themeConfig.templateName}! 👋🏻`}</Typography>
+          <Typography>Please sign-in to your account and start the adventure</Typography>
+        </div>
+        <Alert icon={false} className='bg-[var(--mui-palette-primary-lightOpacity)]'>
+          <Typography variant='body2' color='primary.main'>
+            Email: <span className='font-medium'>admin@vuexy.com</span> / Pass:{' '}
+            <span className='font-medium'>admin</span>
+          </Typography>
+        </Alert>
+        {children}
+      </div>
+    </div>
+  )
+}
