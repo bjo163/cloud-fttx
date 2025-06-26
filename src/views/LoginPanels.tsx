@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 
 import { styled, useTheme } from '@mui/material/styles'
 import useMediaQuery from '@mui/material/useMediaQuery'
@@ -68,6 +68,41 @@ export function LoginLeftPanel({ mode }: { mode: SystemMode }) {
 
   const pollinationsUrl = `https://image.pollinations.ai/prompt/${pollinationsPrompt}.png`
   const [imgSrc, setImgSrc] = useState(pollinationsUrl)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [canvasUrl, setCanvasUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    const img = new window.Image()
+
+    img.crossOrigin = 'Anonymous'
+    img.src = imgSrc
+
+    img.onload = () => {
+      const canvas = canvasRef.current
+
+      if (!canvas) return
+      canvas.width = img.width
+      canvas.height = img.height
+      const ctx = canvas.getContext('2d')
+
+      if (!ctx) return
+      ctx.drawImage(img, 0, 0)
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+      const data = imageData.data
+
+      for (let i = 0; i < data.length; i += 4) {
+        // Jika pixel putih (atau sangat terang), buat transparan
+        if (data[i] > 240 && data[i + 1] > 240 && data[i + 2] > 240) {
+          data[i + 3] = 0
+        }
+      }
+
+      ctx.putImageData(imageData, 0, 0)
+      setCanvasUrl(canvas.toDataURL('image/png'))
+    }
+
+    img.onerror = () => setCanvasUrl(null)
+  }, [imgSrc])
 
   const handleImgError = () => setImgSrc(characterIllustration)
 
@@ -80,7 +115,13 @@ export function LoginLeftPanel({ mode }: { mode: SystemMode }) {
         }
       )}
     >
-      <LoginIllustration src={imgSrc} alt='character-illustration' onError={handleImgError} />
+      {/* Hidden canvas for processing transparency */}
+      <canvas ref={canvasRef} style={{ display: 'none' }} />
+      {canvasUrl ? (
+        <LoginIllustration src={canvasUrl} alt='character-illustration' />
+      ) : (
+        <LoginIllustration src={imgSrc} alt='character-illustration' onError={handleImgError} />
+      )}
       {!hidden && <MaskImg alt='mask' src={authBackground} />}
     </div>
   )
