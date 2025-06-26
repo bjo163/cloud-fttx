@@ -14,8 +14,8 @@ import type { Locale } from '@/configs/i18n'
 import type { ErrorType, FormData } from '@/types/pages/loginTypes'
 
 // Component Imports
-import { LoginForm, useLoginForm } from '../LoginFormParts'
-import { LoginLeftPanel, LoginRightPanel } from '../LoginPanels'
+import { LoginForm, useLoginForm } from './LoginFormParts'
+import { LoginLeftPanel, LoginRightPanel } from './LoginPanels'
 
 // Util Imports
 import { getLocalizedUrl } from '@/utils/i18n'

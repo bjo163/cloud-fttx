@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 import { styled, useTheme } from '@mui/material/styles'
 import useMediaQuery from '@mui/material/useMediaQuery'
@@ -59,53 +59,6 @@ export function LoginLeftPanel({ mode }: { mode: SystemMode }) {
 
   const authBackground = useImageVariant(mode, lightImg, darkImg)
 
-  const primaryColor = theme.palette.primary.main
-
-  // Dynamic Pollinations AI image
-  const pollinationsPrompt = encodeURIComponent(
-    `isometric login page ui, professional, clean, minimal, color scheme ${primaryColor}, digital, 3d, trending on dribbble, png, transparent background, alpha channel, no background, isolated, no text, no watermark`
-  )
-
-  const pollinationsUrl = `https://image.pollinations.ai/prompt/${pollinationsPrompt}.png`
-  const [imgSrc, setImgSrc] = useState(pollinationsUrl)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const [canvasUrl, setCanvasUrl] = useState<string | null>(null)
-
-  useEffect(() => {
-    const img = new window.Image()
-
-    img.crossOrigin = 'Anonymous'
-    img.src = imgSrc
-
-    img.onload = () => {
-      const canvas = canvasRef.current
-
-      if (!canvas) return
-      canvas.width = img.width
-      canvas.height = img.height
-      const ctx = canvas.getContext('2d')
-
-      if (!ctx) return
-      ctx.drawImage(img, 0, 0)
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-      const data = imageData.data
-
-      for (let i = 0; i < data.length; i += 4) {
-        // Jika pixel putih (atau sangat terang), buat transparan
-        if (data[i] > 240 && data[i + 1] > 240 && data[i + 2] > 240) {
-          data[i + 3] = 0
-        }
-      }
-
-      ctx.putImageData(imageData, 0, 0)
-      setCanvasUrl(canvas.toDataURL('image/png'))
-    }
-
-    img.onerror = () => setCanvasUrl(null)
-  }, [imgSrc])
-
-  const handleImgError = () => setImgSrc(characterIllustration)
-
   return (
     <div
       className={classnames(
@@ -115,19 +68,24 @@ export function LoginLeftPanel({ mode }: { mode: SystemMode }) {
         }
       )}
     >
-      {/* Hidden canvas for processing transparency */}
-      <canvas ref={canvasRef} style={{ display: 'none' }} />
-      {canvasUrl ? (
-        <LoginIllustration src={canvasUrl} alt='character-illustration' />
-      ) : (
-        <LoginIllustration src={imgSrc} alt='character-illustration' onError={handleImgError} />
-      )}
+      <LoginIllustration src={characterIllustration} alt='character-illustration' />
       {!hidden && <MaskImg alt='mask' src={authBackground} />}
     </div>
   )
 }
 
 export function LoginRightPanel({ children }: { children: React.ReactNode }) {
+  // Pilih tagline random hanya di client untuk menghindari hydration mismatch
+  const [tagline, setTagline] = useState('')
+
+  useEffect(() => {
+    if (Array.isArray(themeConfig.HeroTagline) && themeConfig.HeroTagline.length > 0) {
+      const idx = Math.floor(Math.random() * themeConfig.HeroTagline.length)
+
+      setTagline(themeConfig.HeroTagline[idx])
+    }
+  }, [])
+
   return (
     <div className='flex justify-center items-center bs-full bg-backgroundPaper !min-is-full p-6 md:!min-is-[unset] md:p-12 md:is-[480px]'>
       <div className='absolute block-start-5 sm:block-start-[33px] inline-start-6 sm:inline-start-[38px]'>
@@ -136,7 +94,7 @@ export function LoginRightPanel({ children }: { children: React.ReactNode }) {
       <div className='flex flex-col gap-6 is-full sm:is-auto md:is-full sm:max-is-[400px] md:max-is-[unset] mbs-8 sm:mbs-11 md:mbs-0'>
         <div className='flex flex-col gap-1'>
           <Typography variant='h4'>{`Welcome to ${themeConfig.templateName}! 👋🏻`}</Typography>
-          <Typography>Please sign-in to your account and start the adventure</Typography>
+          {tagline && <Typography className='text-primary font-semibold'>{tagline}</Typography>}
         </div>
         <Alert icon={false} className='bg-[var(--mui-palette-primary-lightOpacity)]'>
           <Typography variant='body2' color='primary.main'>
@@ -145,6 +103,37 @@ export function LoginRightPanel({ children }: { children: React.ReactNode }) {
           </Typography>
         </Alert>
         {children}
+        {/* Informasi tambahan dari themeConfig */}
+        <div className='mt-8 text-center text-xs text-disabled'>
+          {themeConfig.templateDescription && <div>{themeConfig.templateDescription}</div>}
+          <div className='mt-1'>
+            <span className='font-semibold'>{themeConfig.templateName}</span>
+            {themeConfig.templateVersion && <span> v{themeConfig.templateVersion}</span>}
+          </div>
+          <div className='flex justify-center gap-2 mt-1'>
+            {themeConfig.templateDocumentation && (
+              <a
+                href={themeConfig.templateDocumentation}
+                target='_blank'
+                rel='noopener noreferrer'
+                className='underline text-primary'
+              >
+                Dokumentasi
+              </a>
+            )}
+            {themeConfig.templateDocumentation && themeConfig.templateSupport && <span>|</span>}
+            {themeConfig.templateSupport && (
+              <a
+                href={themeConfig.templateSupport}
+                target='_blank'
+                rel='noopener noreferrer'
+                className='underline text-primary'
+              >
+                Support
+              </a>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   )

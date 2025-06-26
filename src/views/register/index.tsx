@@ -109,71 +109,87 @@ const Register = ({ mode }: { mode: SystemMode }) => {
         >
           <Logo />
         </Link>
-        <div className='flex flex-col gap-6 is-full sm:is-auto md:is-full sm:max-is-[400px] md:max-is-[unset] mbs-8 sm:mbs-11 md:mbs-0'>
-          <div className='flex flex-col gap-1'>
-            <Typography variant='h4'>Adventure starts here 🚀</Typography>
-            <Typography>Make your app management easy and fun!</Typography>
-          </div>
-          <form noValidate autoComplete='off' onSubmit={e => e.preventDefault()} className='flex flex-col gap-6'>
-            <CustomTextField autoFocus fullWidth label='Username' placeholder='Enter your username' />
-            <CustomTextField fullWidth label='Email' placeholder='Enter your email' />
-            <CustomTextField
-              fullWidth
-              label='Password'
-              placeholder='············'
-              type={isPasswordShown ? 'text' : 'password'}
-              slotProps={{
-                input: {
-                  endAdornment: (
-                    <InputAdornment position='end'>
-                      <IconButton edge='end' onClick={handleClickShowPassword} onMouseDown={e => e.preventDefault()}>
-                        <i className={isPasswordShown ? 'tabler-eye-off' : 'tabler-eye'} />
-                      </IconButton>
-                    </InputAdornment>
-                  )
-                }
-              }}
-            />
-            <FormControlLabel
-              control={<Checkbox />}
-              label={
-                <>
-                  <span>I agree to </span>
-                  <Link className='text-primary' href='/' onClick={e => e.preventDefault()}>
-                    privacy policy & terms
-                  </Link>
-                </>
-              }
-            />
-            <Button fullWidth variant='contained' type='submit'>
-              Sign Up
-            </Button>
-            <div className='flex justify-center items-center flex-wrap gap-2'>
-              <Typography>Already have an account?</Typography>
-              <Typography component={Link} href={getLocalizedUrl('/login', locale as Locale)} color='primary.main'>
-                Sign in instead
-              </Typography>
-            </div>
-            <Divider className='gap-2'>or</Divider>
-            <div className='flex justify-center items-center gap-1.5'>
-              <IconButton className='text-facebook' size='small'>
-                <i className='tabler-brand-facebook-filled' />
-              </IconButton>
-              <IconButton className='text-twitter' size='small'>
-                <i className='tabler-brand-twitter-filled' />
-              </IconButton>
-              <IconButton className='text-textPrimary' size='small'>
-                <i className='tabler-brand-github-filled' />
-              </IconButton>
-              <IconButton className='text-error' size='small'>
-                <i className='tabler-brand-google-filled' />
-              </IconButton>
-            </div>
-          </form>
-        </div>
+        <RegisterForm
+          isPasswordShown={isPasswordShown}
+          handleClickShowPassword={handleClickShowPassword}
+          locale={locale}
+        />
       </div>
     </div>
   )
 }
+
+const RegisterForm = ({
+  isPasswordShown,
+  handleClickShowPassword,
+  locale
+}: {
+  isPasswordShown: boolean
+  handleClickShowPassword: () => void
+  locale: string | string[]
+}) => (
+  <div className='flex flex-col gap-6 is-full sm:is-auto md:is-full sm:max-is-[400px] md:max-is-[unset] mbs-8 sm:mbs-11 md:mbs-0'>
+    <div className='flex flex-col gap-1'>
+      <Typography variant='h4'>Adventure starts here 🚀</Typography>
+      <Typography>Make your app management easy and fun!</Typography>
+    </div>
+    <form noValidate autoComplete='off' onSubmit={e => e.preventDefault()} className='flex flex-col gap-6'>
+      <CustomTextField autoFocus fullWidth label='Username' placeholder='Enter your username' />
+      <CustomTextField fullWidth label='Email' placeholder='Enter your email' />
+      <CustomTextField
+        fullWidth
+        label='Password'
+        placeholder='············'
+        type={isPasswordShown ? 'text' : 'password'}
+        slotProps={{
+          input: {
+            endAdornment: (
+              <InputAdornment position='end'>
+                <IconButton edge='end' onClick={handleClickShowPassword} onMouseDown={e => e.preventDefault()}>
+                  <i className={isPasswordShown ? 'tabler-eye-off' : 'tabler-eye'} />
+                </IconButton>
+              </InputAdornment>
+            )
+          }
+        }}
+      />
+      <FormControlLabel
+        control={<Checkbox />}
+        label={
+          <>
+            <span>I agree to </span>
+            <Link className='text-primary' href='/' onClick={e => e.preventDefault()}>
+              privacy policy & terms
+            </Link>
+          </>
+        }
+      />
+      <Button fullWidth variant='contained' type='submit'>
+        Sign Up
+      </Button>
+      <div className='flex justify-center items-center flex-wrap gap-2'>
+        <Typography>Already have an account?</Typography>
+        <Typography component={Link} href={getLocalizedUrl('/login', locale as Locale)} color='primary.main'>
+          Sign in instead
+        </Typography>
+      </div>
+      <Divider className='gap-2'>or</Divider>
+      <div className='flex justify-center items-center gap-1.5'>
+        <IconButton className='text-facebook' size='small'>
+          <i className='tabler-brand-facebook-filled' />
+        </IconButton>
+        <IconButton className='text-twitter' size='small'>
+          <i className='tabler-brand-twitter-filled' />
+        </IconButton>
+        <IconButton className='text-textPrimary' size='small'>
+          <i className='tabler-brand-github-filled' />
+        </IconButton>
+        <IconButton className='text-error' size='small'>
+          <i className='tabler-brand-google-filled' />
+        </IconButton>
+      </div>
+    </form>
+  </div>
+)
 
 export default Register

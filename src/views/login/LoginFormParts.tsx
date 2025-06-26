@@ -155,14 +155,14 @@ export function LoginForm({
         handleClickShowPassword={handleClickShowPassword}
       />
       <div className='flex justify-between items-center gap-x-3 gap-y-1 flex-wrap'>
-        <FormControlLabel control={<Checkbox defaultChecked />} label='Remember me' />
+        <FormControlLabel control={<Checkbox defaultChecked />} label='Ingat saya' />
         <Typography
           className='text-end'
           color='primary.main'
           component={Link}
           href={getLocalizedUrl('/forgot-password', locale as Locale)}
         >
-          Forgot password?
+          Lupa password?
         </Typography>
       </div>
       <Button
@@ -172,15 +172,15 @@ export function LoginForm({
         disabled={loading}
         startIcon={loading ? <span className='loader' /> : undefined}
       >
-        {loading ? 'Loading...' : 'Login'}
+        {loading ? 'Memuat...' : 'Masuk'}
       </Button>
       <div className='flex justify-center items-center flex-wrap gap-2'>
-        <Typography>New on our platform?</Typography>
+        <Typography>Baru di platform kami?</Typography>
         <Typography component={Link} href={getLocalizedUrl('/register', locale as Locale)} color='primary.main'>
-          Create an account
+          Daftar akun
         </Typography>
       </div>
-      <Divider className='gap-2'>or</Divider>
+      <Divider className='gap-2'>atau</Divider>
       <SocialLoginButton />
     </form>
   )

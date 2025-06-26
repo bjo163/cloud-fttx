@@ -1,5 +1,5 @@
 // Component Imports
-import NotFound from '@views/NotFound'
+import NotFound from '@/views/apps/not-found'
 
 // Server Action Imports
 import { getServerMode } from '@core/utils/serverHelpers'

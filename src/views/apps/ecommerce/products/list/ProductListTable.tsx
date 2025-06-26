@@ -1,7 +1,7 @@
 'use client'
 
 // React Imports
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 
 // Next Imports
 import Link from 'next/link'
@@ -258,284 +258,140 @@ function getProductTableColumns({
   ]
 }
 
-const ProductListTable = ({ productData }: { productData?: ProductType[] }) => {
-  // States
-  const [rowSelection, setRowSelection] = useState({})
-  const [data, setData] = useState(...[productData])
-  const [filteredData, setFilteredData] = useState(data)
-  const [globalFilter, setGlobalFilter] = useState('')
-  const [modalOpen, setModalOpen] = useState(false)
-  const [modalMode, setModalMode] = useState<'add' | 'edit'>('add')
-  const [modalInitial, setModalInitial] = useState<Partial<ProductType> | undefined>(undefined)
-  const [notif, setNotif] = useState<string>('')
-
-  // Kategori unik dari data
-  const categories = Array.from(new Set((data || []).map(p => p.category).filter(Boolean)))
-
-  // Handler CRUD
-  const handleAdd = () => {
-    setModalMode('add')
-    setModalInitial(undefined)
-    setModalOpen(true)
-  }
-
-  const handleEdit = (row: ProductType) => {
-    setModalMode('edit')
-    setModalInitial(row)
-    setModalOpen(true)
-  }
-
-  const handleDelete = async (id: number) => {
-    const res = await deleteProductOdooData(id)
-
-    if (res.success) {
-      setData(data?.filter(product => product.id !== id))
-      setNotif('Produk berhasil dihapus')
-    } else {
-      setNotif('Gagal hapus produk')
-    }
-  }
-
-  const handleSubmit = async (values: Partial<ProductType>) => {
-    if (modalMode === 'add') {
-      const res = await createProductOdooData({
-        name: values.productName,
-        categ_id: categories.indexOf(values.category || '') !== -1 ? undefined : values.category,
-        default_code: values.sku,
-        list_price: values.price,
-        active: values.status === 'active'
-      })
-
-      if (res.success) {
-        setData([...(data || []), { ...values, id: res.result, stock: values.status === 'active' } as ProductType])
-        setNotif('Produk berhasil ditambah')
-        setModalOpen(false)
-      } else {
-        setNotif('Gagal tambah produk')
-      }
-    } else if (modalMode === 'edit' && modalInitial?.id) {
-      const res = await updateProductOdooData(modalInitial.id, {
-        name: values.productName,
-        categ_id: categories.indexOf(values.category || '') !== -1 ? undefined : values.category,
-        default_code: values.sku,
-        list_price: values.price,
-        active: values.status === 'active'
-      })
-
-      if (res.success) {
-        setData((data || []).map(p => (p.id === modalInitial.id ? { ...p, ...values } : p)))
-        setNotif('Produk berhasil diupdate')
-        setModalOpen(false)
-      } else {
-        setNotif('Gagal update produk')
-      }
-    }
-  }
-
-  // Hooks
-  const { lang: locale } = useParams()
-
-  const columns = useMemo<ColumnDef<ProductWithActionsType, any>[]>(
-    () =>
-      getProductTableColumns({
-        handleEdit,
-        handleDelete,
-        productCategoryObj,
-        productStatusObj,
-        columnHelper,
-        data,
-        filteredData
-      }),
-    [data, filteredData]
+function ProductTableFilterBar({ globalFilter, setGlobalFilter, table, handleAdd }) {
+  return (
+    <div className='flex flex-wrap justify-between gap-4 p-6'>
+      <DebouncedInput
+        value={globalFilter ?? ''}
+        onChange={value => setGlobalFilter(String(value))}
+        placeholder='Search Product'
+        className='max-sm:is-full'
+      />
+      <div className='flex flex-wrap items-center max-sm:flex-col gap-4 max-sm:is-full is-auto'>
+        <CustomTextField
+          select
+          value={table.getState().pagination.pageSize}
+          onChange={e => table.setPageSize(Number(e.target.value))}
+          className='flex-auto is-[70px] max-sm:is-full'
+        >
+          <MenuItem value='10'>10</MenuItem>
+          <MenuItem value='25'>25</MenuItem>
+          <MenuItem value='50'>50</MenuItem>
+        </CustomTextField>
+        <Button
+          color='secondary'
+          variant='tonal'
+          className='max-sm:is-full is-auto'
+          startIcon={<i className='tabler-upload' />}
+        >
+          Export
+        </Button>
+        <Button
+          variant='contained'
+          className='max-sm:is-full is-auto'
+          startIcon={<i className='tabler-plus' />}
+          onClick={handleAdd}
+        >
+          Add Product
+        </Button>
+      </div>
+    </div>
   )
+}
 
-  const table = useReactTable({
-    data: filteredData as ProductType[],
-    columns,
-    filterFns: {
-      fuzzy: fuzzyFilter
-    },
-    state: {
-      rowSelection,
-      globalFilter
-    },
-    initialState: {
-      pagination: {
-        pageSize: 10
-      }
-    },
-    enableRowSelection: true, //enable row selection for all rows
-    // enableRowSelection: row => row.original.age > 18, // or enable row selection conditionally per row
-    globalFilterFn: fuzzyFilter,
-    onRowSelectionChange: setRowSelection,
-    getCoreRowModel: getCoreRowModel(),
-    onGlobalFilterChange: setGlobalFilter,
-    getFilteredRowModel: getFilteredRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
-    getFacetedMinMaxValues: getFacetedMinMaxValues()
-  })
+function ProductTableHeader({ table, classnames, flexRender }) {
+  return (
+    <thead>
+      {table.getHeaderGroups().map(headerGroup => (
+        <tr key={headerGroup.id}>
+          {headerGroup.headers.map(header => (
+            <th key={header.id}>
+              {header.isPlaceholder ? null : (
+                <>
+                  <div
+                    className={classnames({
+                      'flex items-center': header.column.getIsSorted(),
+                      'cursor-pointer select-none': header.column.getCanSort()
+                    })}
+                    onClick={header.column.getToggleSortingHandler()}
+                  >
+                    {flexRender(header.column.columnDef.header, header.getContext())}
+                    {{
+                      asc: <i className='tabler-chevron-up text-xl' />,
+                      desc: <i className='tabler-chevron-down text-xl' />
+                    }[header.column.getIsSorted() as 'asc' | 'desc'] ?? null}
+                  </div>
+                </>
+              )}
+            </th>
+          ))}
+        </tr>
+      ))}
+    </thead>
+  )
+}
 
-  // Kategori unik dari data
-  const categories = Array.from(new Set((data || []).map(p => p.category).filter(Boolean)))
-
-  // Handler CRUD
-  const handleAdd = () => {
-    setModalMode('add')
-    setModalInitial(undefined)
-    setModalOpen(true)
+function ProductTableBody({ table, classnames, flexRender }) {
+  if (table.getFilteredRowModel().rows.length === 0) {
+    return (
+      <tbody>
+        <tr>
+          <td colSpan={table.getVisibleFlatColumns().length} className='text-center'>
+            No data available
+          </td>
+        </tr>
+      </tbody>
+    )
   }
 
-  const handleEdit = (row: ProductType) => {
-    setModalMode('edit')
-    setModalInitial(row)
-    setModalOpen(true)
-  }
+  return (
+    <tbody>
+      {table
+        .getRowModel()
+        .rows.slice(0, table.getState().pagination.pageSize)
+        .map(row => (
+          <tr key={row.id} className={classnames({ selected: row.getIsSelected() })}>
+            {row.getVisibleCells().map(cell => (
+              <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
+            ))}
+          </tr>
+        ))}
+    </tbody>
+  )
+}
 
-  const handleDelete = async (id: number) => {
-    const res = await deleteProductOdooData(id)
-
-    if (res.success) {
-      setData(data?.filter(product => product.id !== id))
-      setNotif('Produk berhasil dihapus')
-    } else {
-      setNotif('Gagal hapus produk')
-    }
-  }
-
-  const handleSubmit = async (values: Partial<ProductType>) => {
-    if (modalMode === 'add') {
-      const res = await createProductOdooData({
-        name: values.productName,
-        categ_id: categories.indexOf(values.category || '') !== -1 ? undefined : values.category,
-        default_code: values.sku,
-        list_price: values.price,
-        active: values.status === 'active'
-      })
-
-      if (res.success) {
-        setData([...(data || []), { ...values, id: res.result, stock: values.status === 'active' } as ProductType])
-        setNotif('Produk berhasil ditambah')
-        setModalOpen(false)
-      } else {
-        setNotif('Gagal tambah produk')
-      }
-    } else if (modalMode === 'edit' && modalInitial?.id) {
-      const res = await updateProductOdooData(modalInitial.id, {
-        name: values.productName,
-        categ_id: categories.indexOf(values.category || '') !== -1 ? undefined : values.category,
-        default_code: values.sku,
-        list_price: values.price,
-        active: values.status === 'active'
-      })
-
-      if (res.success) {
-        setData((data || []).map(p => (p.id === modalInitial.id ? { ...p, ...values } : p)))
-        setNotif('Produk berhasil diupdate')
-        setModalOpen(false)
-      } else {
-        setNotif('Gagal update produk')
-      }
-    }
-  }
-
+function ProductListTableMain({
+  data,
+  globalFilter,
+  setGlobalFilter,
+  handleAdd,
+  handleSubmit,
+  modalOpen,
+  setModalOpen,
+  modalInitial,
+  categories,
+  modalMode,
+  notif,
+  table,
+  classnames,
+  flexRender
+}) {
   return (
     <>
       <Card>
         <CardHeader title='Filters' />
-        <TableFilters setData={setFilteredData} productData={data} />
+        <TableFilters setData={setGlobalFilter} productData={data} />
         <Divider />
-        <div className='flex flex-wrap justify-between gap-4 p-6'>
-          <DebouncedInput
-            value={globalFilter ?? ''}
-            onChange={value => setGlobalFilter(String(value))}
-            placeholder='Search Product'
-            className='max-sm:is-full'
-          />
-          <div className='flex flex-wrap items-center max-sm:flex-col gap-4 max-sm:is-full is-auto'>
-            <CustomTextField
-              select
-              value={table.getState().pagination.pageSize}
-              onChange={e => table.setPageSize(Number(e.target.value))}
-              className='flex-auto is-[70px] max-sm:is-full'
-            >
-              <MenuItem value='10'>10</MenuItem>
-              <MenuItem value='25'>25</MenuItem>
-              <MenuItem value='50'>50</MenuItem>
-            </CustomTextField>
-            <Button
-              color='secondary'
-              variant='tonal'
-              className='max-sm:is-full is-auto'
-              startIcon={<i className='tabler-upload' />}
-            >
-              Export
-            </Button>
-            <Button
-              variant='contained'
-              className='max-sm:is-full is-auto'
-              startIcon={<i className='tabler-plus' />}
-              onClick={handleAdd}
-            >
-              Add Product
-            </Button>
-          </div>
-        </div>
+        <ProductTableFilterBar
+          globalFilter={globalFilter}
+          setGlobalFilter={setGlobalFilter}
+          table={table}
+          handleAdd={handleAdd}
+        />
         <div className='overflow-x-auto'>
           <table className={tableStyles.table}>
-            <thead>
-              {table.getHeaderGroups().map(headerGroup => (
-                <tr key={headerGroup.id}>
-                  {headerGroup.headers.map(header => (
-                    <th key={header.id}>
-                      {header.isPlaceholder ? null : (
-                        <>
-                          <div
-                            className={classnames({
-                              'flex items-center': header.column.getIsSorted(),
-                              'cursor-pointer select-none': header.column.getCanSort()
-                            })}
-                            onClick={header.column.getToggleSortingHandler()}
-                          >
-                            {flexRender(header.column.columnDef.header, header.getContext())}
-                            {{
-                              asc: <i className='tabler-chevron-up text-xl' />,
-                              desc: <i className='tabler-chevron-down text-xl' />
-                            }[header.column.getIsSorted() as 'asc' | 'desc'] ?? null}
-                          </div>
-                        </>
-                      )}
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </thead>
-            {table.getFilteredRowModel().rows.length === 0 ? (
-              <tbody>
-                <tr>
-                  <td colSpan={table.getVisibleFlatColumns().length} className='text-center'>
-                    No data available
-                  </td>
-                </tr>
-              </tbody>
-            ) : (
-              <tbody>
-                {table
-                  .getRowModel()
-                  .rows.slice(0, table.getState().pagination.pageSize)
-                  .map(row => {
-                    return (
-                      <tr key={row.id} className={classnames({ selected: row.getIsSelected() })}>
-                        {row.getVisibleCells().map(cell => (
-                          <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
-                        ))}
-                      </tr>
-                    )
-                  })}
-              </tbody>
-            )}
+            <ProductTableHeader table={table} classnames={classnames} flexRender={flexRender} />
+            <ProductTableBody table={table} classnames={classnames} flexRender={flexRender} />
           </table>
         </div>
         <TablePagination
@@ -558,6 +414,148 @@ const ProductListTable = ({ productData }: { productData?: ProductType[] }) => {
       />
       {notif && <div className='text-success p-2'>{notif}</div>}
     </>
+  )
+}
+
+const ProductListTable = ({ productData }: { productData?: ProductType[] }) => {
+  // States
+  const [rowSelection, setRowSelection] = useState({})
+  const [data, setData] = useState(...[productData])
+  const [filteredData] = useState(data)
+  const [globalFilter, setGlobalFilter] = useState('')
+  const [modalOpen, setModalOpen] = useState(false)
+  const [modalMode, setModalMode] = useState<'add' | 'edit'>('add')
+  const [modalInitial, setModalInitial] = useState<Partial<ProductType> | undefined>(undefined)
+  const [notif, setNotif] = useState<string>('')
+
+  // Kategori unik dari data
+  const categories = useMemo(() => Array.from(new Set((data || []).map(p => p.category).filter(Boolean))), [data])
+
+  // Handler CRUD
+  const handleAdd = useCallback(() => {
+    setModalMode('add')
+    setModalInitial(undefined)
+    setModalOpen(true)
+  }, [])
+
+  const handleEdit = useCallback((row: ProductType) => {
+    setModalMode('edit')
+    setModalInitial(row)
+    setModalOpen(true)
+  }, [])
+
+  const handleDelete = useCallback(async (id: number) => {
+    const res = await deleteProductOdooData(id)
+
+    if (res.success) {
+      setData(data => data?.filter(product => product.id !== id))
+      setNotif('Produk berhasil dihapus')
+    } else {
+      setNotif('Gagal hapus produk')
+    }
+  }, [])
+
+  const handleSubmit = useCallback(
+    async (values: Partial<ProductType>) => {
+      if (modalMode === 'add') {
+        const res = await createProductOdooData({
+          name: values.productName,
+          categ_id: categories.indexOf(values.category || '') !== -1 ? undefined : values.category,
+          default_code: values.sku,
+          list_price: values.price,
+          active: values.status === 'active'
+        })
+
+        if (res.success) {
+          setData(data => [
+            ...(data || []),
+            { ...values, id: res.result, stock: values.status === 'active' } as ProductType
+          ])
+          setNotif('Produk berhasil ditambah')
+          setModalOpen(false)
+        } else {
+          setNotif('Gagal tambah produk')
+        }
+      } else if (modalMode === 'edit' && modalInitial?.id) {
+        const res = await updateProductOdooData(modalInitial.id, {
+          name: values.productName,
+          categ_id: categories.indexOf(values.category || '') !== -1 ? undefined : values.category,
+          default_code: values.sku,
+          list_price: values.price,
+          active: values.status === 'active'
+        })
+
+        if (res.success) {
+          setData(data => (data || []).map(p => (p.id === modalInitial.id ? { ...p, ...values } : p)))
+          setNotif('Produk berhasil diupdate')
+          setModalOpen(false)
+        } else {
+          setNotif('Gagal update produk')
+        }
+      }
+    },
+    [categories, modalInitial, modalMode]
+  )
+
+  const columns = useMemo<ColumnDef<ProductWithActionsType, any>[]>(
+    () =>
+      getProductTableColumns({
+        handleEdit,
+        handleDelete,
+        productCategoryObj,
+        productStatusObj,
+        columnHelper,
+        data,
+        filteredData
+      }),
+    [data, filteredData, handleEdit, handleDelete]
+  )
+
+  const table = useReactTable({
+    data: filteredData as ProductType[],
+    columns,
+    filterFns: {
+      fuzzy: fuzzyFilter
+    },
+    state: {
+      rowSelection,
+      globalFilter
+    },
+    initialState: {
+      pagination: {
+        pageSize: 10
+      }
+    },
+    enableRowSelection: true,
+    globalFilterFn: fuzzyFilter,
+    onRowSelectionChange: setRowSelection,
+    getCoreRowModel: getCoreRowModel(),
+    onGlobalFilterChange: setGlobalFilter,
+    getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+    getFacetedMinMaxValues: getFacetedMinMaxValues()
+  })
+
+  return (
+    <ProductListTableMain
+      data={data}
+      globalFilter={globalFilter}
+      setGlobalFilter={setGlobalFilter}
+      handleAdd={handleAdd}
+      handleSubmit={handleSubmit}
+      modalOpen={modalOpen}
+      setModalOpen={setModalOpen}
+      modalInitial={modalInitial}
+      categories={categories}
+      modalMode={modalMode}
+      notif={notif}
+      table={table}
+      classnames={classnames}
+      flexRender={flexRender}
+    />
   )
 }
 

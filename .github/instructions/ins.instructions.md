@@ -58,6 +58,7 @@ Tulis 10 saran tugas dalam format berikut:
 
 ✅ Wajib:
 
+- Sebelum Memberikan Task Wajib Deep Dive dan membaca ke kode file dan struktur proyek
 - Berdasarkan isi file & struktur nyata
 - Langsung actionable
 - Mengikuti konvensi & rule dari prompt

@@ -38,6 +38,13 @@ type Footer = {
 
 export type Config = {
   templateName: string
+  templateTitle?: string
+  templateDescription?: string
+  templateVersion?: string
+  templateWebsite?: string
+  templateDocumentation?: string
+  templateSupport?: string
+  HeroTagline?: string[]
   homePageUrl: string
   settingsCookieName: string
   mode: Mode
@@ -54,10 +61,28 @@ export type Config = {
 }
 
 const themeConfig: Config = {
-  templateName: 'Vuexy',
+  templateName: 'ZMS',
+  templateTitle: 'Zero Management System',
+  templateDescription: 'Zero Management System is a modern and powerful management system built with Vue.js and MUI.',
+  templateVersion: '1.0.0',
+  templateWebsite: 'https://zero-management-system.com',
+  templateDocumentation: 'https://docs.zero-management-system.com',
+  templateSupport: 'https://support.zero-management-system.com',
+  HeroTagline: [
+    'Kelola Bisnis Lebih Mudah, Cepat, dan Aman',
+    'Satu Dashboard, Semua Solusi Manajemen',
+    'Automasi Proses, Maksimalkan Produktivitas',
+    'Data Real-Time, Keputusan Lebih Cerdas',
+    'Sistem Modern untuk Bisnis Masa Kini',
+    'Integrasi Mudah, Kolaborasi Tanpa Batas',
+    'Akses Dimana Saja, Kapan Saja',
+    'Keamanan Data Terjamin, Privasi Terjaga',
+    'Tingkatkan Efisiensi, Kurangi Biaya Operasional',
+    'Solusi Manajemen All-in-One untuk Anda'
+  ],
   homePageUrl: '/dashboards/crm',
   settingsCookieName: 'vuexy-mui-next-demo-1',
-  mode: 'system', // 'system', 'light', 'dark'
+  mode: 'dark', // 'system', 'light', 'dark'
   skin: 'default', // 'default', 'bordered'
   semiDark: false, // true, false
   layout: 'vertical', // 'vertical', 'collapsed', 'horizontal'
