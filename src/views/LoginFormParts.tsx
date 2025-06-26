@@ -90,10 +90,8 @@ export function LoginForm({
               field.onChange(e.target.value)
               errorState !== null && setErrorState(null)
             }}
-            {...((errors.email || errorState !== null) && {
-              error: true,
-              helperText: errors?.email?.message || errorState?.message[0]
-            })}
+            error={Boolean(errors.email) || Boolean(errorState)}
+            helperText={errors.email?.message || (!errors.email && errorState?.message[0]) || ''}
           />
         )}
       />
